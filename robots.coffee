@@ -1,7 +1,10 @@
 ###
 Robots!
 Copyright © 2012 Martin Tournoij
+MIT license applies. http://opensource.org/licenses/MIT
 http://arp242.net/robots/
+
+Please compile me with coffee -b
 ###
 
 
@@ -24,6 +27,7 @@ _maxlevels = 4
 _waiting = false
 _keybinds = null
 _spritesize = 14
+_dead = false
 
 ###
 Load options from localStorage or set defaults
@@ -316,6 +320,7 @@ Wait = ->
 		do MoveRobots
 
 		if RobotAtPosition _playerpos[0], _playerpos[1]
+			do Die
 			return
 
 		if _numrobots == 0
@@ -433,6 +438,10 @@ ClearGrid = (x, y) ->
 Oh noes! Our brave hero has died! :-(
 ###
 Die = ->
+	if _dead
+		return
+	_dead = true
+
 	ClearGrid _playerpos[0], _playerpos[1]
 	DrawSprite 3, _playerpos[0], _playerpos[1]
 
@@ -454,7 +463,15 @@ Die = ->
 
 	restart = document.createElement 'div'
 	restart.id = 'restart'
-	restart.innerHTML = 'AARRrrgghhhh....<br><br>' +
+
+	if _sprite.src.search 'cybermen' != -1
+		restart.innerHTML = 'Upgraded!'
+	else if _sprite.src.search 'dalek' != -1
+		restart.innerHTML = 'Exerminated!'
+	else
+		restart.innerHTML = 'AARRrrgghhhh....'
+
+	restart.innerHTML += '<br><br>' +
 		'Your highscores:<br>'
 
 	for s in scores

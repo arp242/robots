@@ -2,10 +2,13 @@
 /*
 Robots!
 Copyright © 2012 Martin Tournoij
+MIT license applies. http://opensource.org/licenses/MIT
 http://arp242.net/robots/
+
+Please compile me with coffee -b
 */
 
-var CheckBrowser, ClearGrid, CloseAllWindows, DestroyRobots, Die, DrawGrid, DrawJunk, DrawPlayer, DrawRobot, DrawSprite, GetRandomCoord, HandleKeyboard, HandleMouse, InitGame, InitGame2, InitRobots, JunkAtPosition, LoadOptions, MovePlayer, MovePossible, MoveRobots, NextLevel, RobotAtPosition, SetPosition, ShowWindow, Teleport, UpdateScore, Wait, log, _boxsize, _grid, _gridcon, _gridheight, _gridsizex, _gridsizey, _gridwidth, _junk, _keybinds, _level, _maxlevels, _numrobots, _playerpos, _robots, _spritesize, _waiting,
+var CheckBrowser, ClearGrid, CloseAllWindows, DestroyRobots, Die, DrawGrid, DrawJunk, DrawPlayer, DrawRobot, DrawSprite, GetRandomCoord, HandleKeyboard, HandleMouse, InitGame, InitGame2, InitRobots, JunkAtPosition, LoadOptions, MovePlayer, MovePossible, MoveRobots, NextLevel, RobotAtPosition, SetPosition, ShowWindow, Teleport, UpdateScore, Wait, log, _boxsize, _dead, _grid, _gridcon, _gridheight, _gridsizex, _gridsizey, _gridwidth, _junk, _keybinds, _level, _maxlevels, _numrobots, _playerpos, _robots, _spritesize, _waiting,
   __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
 _boxsize = 14;
@@ -39,6 +42,8 @@ _waiting = false;
 _keybinds = null;
 
 _spritesize = 14;
+
+_dead = false;
 
 /*
 Load options from localStorage or set defaults
@@ -470,6 +475,7 @@ Wait = function() {
   while (true) {
     MoveRobots();
     if (RobotAtPosition(_playerpos[0], _playerpos[1])) {
+      Die();
       return;
     }
     if (_numrobots === 0) {
@@ -636,6 +642,10 @@ Oh noes! Our brave hero has died! :-(
 
 Die = function() {
   var curscore, d, restart, s, scores, _i, _len;
+  if (_dead) {
+    return;
+  }
+  _dead = true;
   ClearGrid(_playerpos[0], _playerpos[1]);
   DrawSprite(3, _playerpos[0], _playerpos[1]);
   curscore = parseInt(document.getElementById('score').innerHTML, 10);
@@ -659,7 +669,14 @@ Die = function() {
   scores = scores.slice(0, 5);
   restart = document.createElement('div');
   restart.id = 'restart';
-  restart.innerHTML = 'AARRrrgghhhh....<br><br>' + 'Your highscores:<br>';
+  if (_sprite.src.search('cybermen' !== -1)) {
+    restart.innerHTML = 'Upgraded!';
+  } else if (_sprite.src.search('dalek' !== -1)) {
+    restart.innerHTML = 'Exerminated!';
+  } else {
+    restart.innerHTML = 'AARRrrgghhhh....';
+  }
+  restart.innerHTML += '<br><br>' + 'Your highscores:<br>';
   for (_i = 0, _len = scores.length; _i < _len; _i++) {
     s = scores[_i];
     restart.innerHTML += '<span class="row' + (s[2] ? ' cur' : '') + '">' + '<span class="score">' + s[0] + '</span>' + s[1] + '</span>';
