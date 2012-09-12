@@ -265,9 +265,9 @@ HandleMouse = (event) ->
 		ShowWindow 'help'
 	else if event.target.id == 'about'
 		ShowWindow 'about'
-	else if event.target.id == 'close'
+	else if event.target.className == 'close'
 		do CloseAllWindows
-	else if event.target.id == 'save'
+	else if event.target.className == 'save'
 		localStorage.setItem 'keybinds', document.getElementById('keyset').selectedIndex
 		localStorage.setItem 'graphics', document.getElementById('graphics').selectedIndex + 1
 		localStorage.setItem 'showgrid', document.getElementById('showgrid').checked
@@ -464,9 +464,9 @@ Die = ->
 	restart = document.createElement 'div'
 	restart.id = 'restart'
 
-	if _sprite.src.search 'cybermen' != -1
+	if _sprite.src.search('cybermen') != -1
 		restart.innerHTML = 'Upgraded!'
-	else if _sprite.src.search 'dalek' != -1
+	else if _sprite.src.search('dalek') != -1
 		restart.innerHTML = 'Exerminated!'
 	else
 		restart.innerHTML = 'AARRrrgghhhh....'
@@ -528,7 +528,9 @@ NextLevel = ->
 	do InitRobots
 
 
-
+###
+TODO: Scrap this and detect features instead of browsers
+###
 CheckBrowser = ->
 	old = false
 
