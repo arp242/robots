@@ -1,7 +1,8 @@
 ###
 Robots!
 Copyright © 2012 Martin Tournoij
-MIT license applies. http://opensource.org/licenses/MIT
+See below for full copyright
+
 http://arp242.net/robots/
 
 Please compile me with coffee -b
@@ -136,20 +137,19 @@ DrawSprite = (num, x, y) ->
 Draw a robot
 ###
 DrawRobot = (num, x, y) ->
+	# Robots has been destroyed
 	if _robots[num] == null
 		return
+	# Add a new robot
 	else if num == null
 		num = _robots.length
 		_robots.push [x, y]
+	# Move existing
 	else
-		ClearGrid _robots[num][0], _robots[num][1]
+		unless RobotAtPosition  _robots[num][0], _robots[num][1]
+			ClearGrid _robots[num][0], _robots[num][1]
 
 	DrawSprite 1, x, y
-
-	#_gridcon.font = "bold 8px sans-serif";
-	#_gridcon.fillStyle = '#000'
-	#_gridcon.fillText num, x * _boxsize + 4, y * _boxsize + 12
-
 	_robots[num] = [x, y]
 
 ###
@@ -588,3 +588,26 @@ InitGame2 = ->
 
 do CheckBrowser
 do InitGame
+
+
+# The MIT License (MIT)
+#
+# Copyright © 2012-2014 Martin Tournoij
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to
+# deal in the Software without restriction, including without limitation the
+# rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+# sell copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# The software is provided "as is", without warranty of any kind, express or
+# implied, including but not limited to the warranties of merchantability,
+# fitness for a particular purpose and noninfringement. In no event shall the
+# authors or copyright holders be liable for any claim, damages or other
+# liability, whether in an action of contract, tort or otherwise, arising
+# from, out of or in connection with the software or the use or other dealings
+# in the software.
