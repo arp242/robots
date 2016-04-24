@@ -1,11 +1,9 @@
 ###
 Robots!
-Copyright © 2012 Martin Tournoij
+Copyright © 2012-2016 Martin Tournoij <martin@arp242.net>
 See below for full copyright
 
 http://arp242.net/robots/
-
-Please compile me with coffee -b
 ###
 
 
@@ -30,38 +28,44 @@ _keybinds = null
 _spritesize = 14
 _dead = false
 
+_sprite = null
+_loaded = false
+
+# Options
+_hardcore = false
+_autoteleport = false
+
+
 ###
 Load options from localStorage or set defaults
 ###
 LoadOptions = ->
-	window._showgrid = if localStorage.getItem('showgrid') == 'true' then true else false
-	window._hardcore = if localStorage.getItem('hardcore') == 'true' then true else false
-	window._autoteleport = if localStorage.getItem('autoteleport') == 'true' then true else false
-	window._graphics = localStorage.getItem 'graphics'
-	if !window._graphics then window._graphics = (parseInt(Math.random() * 3) + 1) + ''
+	_hardcore = if localStorage.getItem('hardcore') is 'true' then true else false
+	_autoteleport = if localStorage.getItem('autoteleport') is 'true' then true else false
+	_graphics = localStorage.getItem 'graphics'
+	_graphics = (parseInt(Math.random() * 3) + 1) + '' unless _graphics
 
-	window._sprite = new Image
-	window.loaded = false
-	window._sprite.onload = -> window.loaded = true
+	_sprite = new Image
+	_loaded = false
+	_sprite.onload = -> _loaded = true
 
-	if window._graphics == '1'
-		window._sprite.src = 'graphics/classic.png'
-	else if window._graphics == '2'
-		window._sprite.src = 'graphics/dalek.png'
-	else if window._graphics == '3'
-		window._sprite.src = 'graphics/cybermen.png'
+	if _graphics is '1'
+		_sprite.src = 'graphics/classic.png'
+	else if _graphics is '2'
+		_sprite.src = 'graphics/dalek.png'
+	else if _graphics is '3'
+		_sprite.src = 'graphics/cybermen.png'
 
-	document.getElementById('graphics').selectedIndex = parseInt(window._graphics, 10) - 1
-	document.getElementById('showgrid').checked = window._showgrid
-	document.getElementById('autoteleport').checked = window._autoteleport
-	document.getElementById('hardcore').checked = window._hardcore
+	document.getElementById('graphics').selectedIndex = parseInt(_graphics, 10) - 1
+	document.getElementById('autoteleport').checked = _autoteleport
+	document.getElementById('hardcore').checked = _hardcore
 
-	if localStorage.getItem('keybinds') == '1'
+	if localStorage.getItem('keybinds') is '1'
 		document.getElementById('keybinds0').style.display = 'none'
 		document.getElementById('keybinds1').style.display = 'block'
 		document.getElementById('keyset').selectedIndex = 1
 
-		window._keybinds = [
+		_keybinds = [
 			[121, -> MovePlayer ['up', 'left']], # y
 			[107, -> MovePlayer ['up']], # k
 			[117, -> MovePlayer ['up', 'right']], # u
@@ -72,15 +76,15 @@ LoadOptions = ->
 			[110, -> MovePlayer ['down', 'right']], # n
 
 			[46, -> MovePlayer []], # .
-			[119, -> do Wait], # w
-			[116, -> do Teleport], # t
+			[119, ->  Wait()], # w
+			[116, -> Teleport()], # t
 		]
 	else
 		document.getElementById('keybinds0').style.display = 'block'
 		document.getElementById('keybinds1').style.display = 'none'
 		document.getElementById('keyset').selectedIndex = 0
 
-		window._keybinds = [
+		_keybinds = [
 			[55, -> MovePlayer ['up', 'left']], # 7
 			[56, -> MovePlayer ['up']], # 8
 			[57, -> MovePlayer ['up', 'right']], # 9
@@ -91,29 +95,16 @@ LoadOptions = ->
 			[51, -> MovePlayer ['down', 'right']], # 3
 
 			[53, -> MovePlayer []], # 5
-			[119, -> do Wait], # w
-			[116, -> do Teleport], # t
+			[119, -> Wait()], # w
+			[116, -> Teleport()], # t
 		]
 
 ###
 Draw an empty grid aka playfield
 ###
-DrawGrid = ->
-	_gridcon.fillStyle = '#fff'
+DrawGrid = (bgcolor='#fff') ->
+	_gridcon.fillStyle = bgcolor
 	_gridcon.fillRect 0, 0, _gridwidth, _gridheight
-
-	if _showgrid
-		for col in [0.._gridsizex * _boxsize] by _boxsize
-			_gridcon.moveTo col + 0.5, 0
-			_gridcon.lineTo col + 0.5, _gridheight
-
-		for row in [0.._gridsizey * _boxsize] by _boxsize
-			_gridcon.moveTo 0, row + 0.5
-			_gridcon.lineTo _gridwidth, row + 0.5
-
-		_gridcon.strokeStyle = '#b7b7b7'
-		_gridcon.lineWidth = 1
-		do _gridcon.stroke
 
 ###
 Draw a bunch of robots at a random locations
@@ -124,30 +115,38 @@ InitRobots = ->
 			x = GetRandomCoord 'x'
 			y = GetRandomCoord 'y'
 
-			if not RobotAtPosition(x, y) and (x != _playerpos[0] and y != _playerpos[1])
+			if not RobotAtPosition(x, y) and (x isnt _playerpos[0] and y isnt _playerpos[1])
 				break
 
 		DrawRobot null, x, y
-
+###
+0: player
+1: robot
+2: junk
+3: dead player
+###
 DrawSprite = (num, x, y) ->
-	_gridcon.drawImage _sprite, _spritesize * num, 0, _spritesize, _spritesize,
-		x * _boxsize, y * _boxsize, _boxsize, _boxsize
+	_gridcon.drawImage _sprite,
+		_spritesize * num, 0,
+		_spritesize, _spritesize,
+		x * _boxsize, y * _boxsize,
+		_boxsize, _boxsize
 
 ###
 Draw a robot
 ###
 DrawRobot = (num, x, y) ->
 	# Robots has been destroyed
-	if _robots[num] == null
-		return
+	return if _robots[num] is null
+
 	# Add a new robot
-	else if num == null
+	if num is null
 		num = _robots.length
 		_robots.push [x, y]
 	# Move existing
 	else
-		unless RobotAtPosition  _robots[num][0], _robots[num][1]
-			ClearGrid _robots[num][0], _robots[num][1]
+		#unless RobotAtPosition  _robots[num][0], _robots[num][1]
+		ClearGrid _robots[num][0], _robots[num][1]
 
 	DrawSprite 1, x, y
 	_robots[num] = [x, y]
@@ -162,10 +161,10 @@ DestroyRobots = (x, y) ->
 
 	i = 0
 	for r in _robots
-		if r and r[0] == x and r[1] == y
+		if r and r[0] is x and r[1] is y
 			_robots[i] = null
 			_numrobots -= 1
-			do UpdateScore
+			UpdateScore()
 		i += 1
 
 DrawJunk = (x, y) ->
@@ -177,7 +176,7 @@ Move robots around
 MoveRobots = ->
 	i = 0
 	for r, i in _robots
-		if r == null
+		if r is null
 			continue
 
 		x = r[0]
@@ -194,8 +193,7 @@ MoveRobots = ->
 			y -= 1
 
 		if RobotAtPosition _playerpos[0], _playerpos[1]
-			do Die
-			return
+			return Die()
 		else if JunkAtPosition x, y
 			ClearGrid _robots[i][0], _robots[i][1]
 			_robots[i] = [x, y]
@@ -205,12 +203,13 @@ MoveRobots = ->
 
 	# Check for collisions
 	for r, i in _robots
-		if r == null
+		if r is null
 			continue
 
 		c = RobotAtPosition r[0], r[1], true
-		if c != false and c != i
+		if c isnt false and c isnt i
 			DestroyRobots r[0], r[1]
+	DrawAllSprites()
 
 ###
 Draw our handsome protagonist
@@ -225,7 +224,7 @@ Get random coordinates
 TODO: How random is Math.random()?
 ###
 GetRandomCoord = (axis) ->
-	axis = if axis == 'x' then _gridsizex else _gridsizey
+	axis = if axis is 'x' then _gridsizex else _gridsizey
 
 	parseInt(Math.random() * (axis - 1) + 1, 10)
 
@@ -246,57 +245,58 @@ HandleKeyboard = (event) ->
 	code = event.keyCode || event.charCode
 
 	# Escape key
-	if code == 27
-		do CloseAllWindows
-		return
+	return CloseAllWindows() if code is 27
 
 	for [keyCode, action] in _keybinds
-		if keyCode == code
-			do event.preventDefault
-			do action
+		if keyCode is code
+			event.preventDefault()
+			action()
 
 ###
 Deal with mouse events
 ###
 HandleMouse = (event) ->
-	if event.target.id == 'options'
+	if event.target.id is 'options'
 		ShowWindow 'options'
-	else if event.target.id == 'help'
+	else if event.target.id is 'help'
 		ShowWindow 'help'
-	else if event.target.id == 'about'
+	else if event.target.id is 'about'
 		ShowWindow 'about'
-	else if event.target.className == 'close'
-		do CloseAllWindows
-	else if event.target.className == 'save'
+	else if event.target.className is 'close'
+		CloseAllWindows()
+	else if event.target.className is 'save'
 		localStorage.setItem 'keybinds', document.getElementById('keyset').selectedIndex
 		localStorage.setItem 'graphics', document.getElementById('graphics').selectedIndex + 1
-		localStorage.setItem 'showgrid', document.getElementById('showgrid').checked
 		localStorage.setItem 'autoteleport', document.getElementById('autoteleport').checked
 		localStorage.setItem 'hardcore', document.getElementById('hardcore').checked
-		do LoadOptions
-		do CloseAllWindows
-		do DrawGrid
+		LoadOptions()
+		CloseAllWindows()
+		DrawGrid()
 
-		# Why doesn't Javascript have sleep() ? :-(
-		sleep = setInterval(->
-			if window.loaded
-				clearInterval sleep
-				DrawPlayer _playerpos[0], _playerpos[1]
+		wait_until_loaded = setInterval ->
+			if _loaded
+				clearInterval wait_until_loaded
+				DrawAllSprites()
+		, 100
 
-				for r, i in _robots
-					if r != null then DrawRobot i, r[0], r[1]
+###
+Draw all the sprites
+###
+DrawAllSprites = ->
+	DrawPlayer _playerpos[0], _playerpos[1]
 
-				for j, i in _junk
-					DrawJunk i, j[0], j[1]
-		, 100)
+	for r, i in _robots
+		DrawRobot i, r[0], r[1] if r isnt null
 
+	for j in _junk
+		DrawJunk j[0], j[1]
 
 ###
 Close all windows
 ###
 CloseAllWindows = ->
 	l = document.getElementById 'layover'
-	if l then l.parentNode.removeChild l
+	l.parentNode.removeChild l if l
 	for win in document.getElementsByClassName 'window'
 		win.style.display = 'none'
 
@@ -317,14 +317,12 @@ Wait = ->
 	_waiting = true
 
 	while true
-		do MoveRobots
+		MoveRobots()
 
-		if RobotAtPosition _playerpos[0], _playerpos[1]
-			do Die
-			return
+		return Die() if RobotAtPosition _playerpos[0], _playerpos[1]
 
-		if _numrobots == 0
-			do NextLevel
+		if _numrobots is 0
+			NextLevel()
 			break
 
 	_waiting = false
@@ -336,12 +334,10 @@ Teleport = ->
 	x = GetRandomCoord 'x'
 	y = GetRandomCoord 'y'
 
-	if RobotAtPosition x, y or JunkAtPosition x, y
-		do Die
-		return
+	return Die() if RobotAtPosition(x, y) or JunkAtPosition(x, y)
 
 	DrawPlayer x, y
-	do MoveRobots
+	MoveRobots()
 
 ### Move the player around
 ###
@@ -359,26 +355,44 @@ MovePlayer = (dir) ->
 	else if 'down' in dir
 		y += 1
 
-	if x < 0 or x > _gridsizex - 1 then return false
-	if y < 0 or y > _gridsizey - 1 then return false
+	return false if x < 0 or x > _gridsizex - 1
+	return false if y < 0 or y > _gridsizey - 1
 
 	dangerous = false
 	for i in [-1..1]
 		for j in [-1..1]
-			if x + i < 0 or x + i > _gridsizex - 1 then continue
-			if y + j < 0 or y + j > _gridsizey - 1 then continue
-			if RobotAtPosition x + i, y + j then dangerous = true
+			continue if x + i < 0 or x + i > _gridsizex - 1
+			continue if y + j < 0 or y + j > _gridsizey - 1
+			dangerous = true if RobotAtPosition x + i, y + j
 
-	if not _hardcore and dangerous then return false
+	if not _hardcore and dangerous
+		if not MovePossible()
+			Flash()
+		return false
 
-	if JunkAtPosition x, y then return false
+	return false if JunkAtPosition x, y
 	DrawPlayer x, y
-	do MoveRobots
+	MoveRobots()
 
-	if _numrobots <= 0
-		do NextLevel
+	return NextLevel() if _numrobots <= 0
 
-	if not _hardcore and _autoteleport and not MovePossible() then do Teleport
+	if not _hardcore and not MovePossible()
+		if  _autoteleport
+			Teleport()
+		else
+			Flash()
+
+###
+Flash the game screen
+###
+Flash = ->
+	DrawGrid '#333'
+	DrawAllSprites()
+
+	setTimeout ->
+		DrawGrid '#fff'
+		DrawAllSprites()
+	, 100
 
 ###
 Check if there is a possible move left
@@ -407,7 +421,7 @@ Check of there if a robot at the position
 ###
 RobotAtPosition = (x, y, retnum) ->
 	for r, i in _robots
-		if r and r[0] == x and r[1] == y
+		if r and r[0] is x and r[1] is y
 			return if retnum then i else true
 
 	return false
@@ -417,17 +431,14 @@ Check if there is "junk" at this position
 ###
 JunkAtPosition = (x, y) ->
 	for j in _junk
-		if j[0] == x and j[1] == y then return true
+		return true if j[0] is x and j[1] is y
 
 	return false
 
 ###
 Clear (blank) this grid positon
-TODO: Redraw grid lines if grid is enabled
 ###
 ClearGrid = (x, y) ->
-	_gridcon.fillStyle = '#fff'
-
 	_gridcon.fillRect(
 		x * _boxsize,
 		y * _boxsize,
@@ -452,11 +463,11 @@ Die = ->
 		scores = []
 
 	d = new Date
-	d = do d.toLocaleDateString
+	d = d.toLocaleDateString()
 	scores.push [curscore, d, true]
 	scores.sort (a, b) ->
-		if a[0] > b[0] then return -1
-		if a[0] < b[0] then return 1
+		return -1 if a[0] > b[0]
+		return 1 if a[0] < b[0]
 		return 0
 
 	scores = scores.slice 0, 5
@@ -464,9 +475,9 @@ Die = ->
 	restart = document.createElement 'div'
 	restart.id = 'restart'
 
-	if _sprite.src.search('cybermen') != -1
+	if _sprite.src.search('cybermen') isnt -1
 		restart.innerHTML = 'Upgraded!'
-	else if _sprite.src.search('dalek') != -1
+	else if _sprite.src.search('dalek') isnt -1
 		restart.innerHTML = 'Exerminated!'
 	else
 		restart.innerHTML = 'AARRrrgghhhh....'
@@ -493,9 +504,9 @@ Die = ->
 		if e.ctrlKey or e.altKey
 			return
 
-		do e.preventDefault
-		do window.location.reload),
-		false
+		e.preventDefault()
+		window.location.reload()
+	), false
 
 ###
 Woohoo! A robot is no more, so lets update the score.
@@ -503,7 +514,7 @@ Woohoo! A robot is no more, so lets update the score.
 UpdateScore = ->
 	score = parseInt(document.getElementById('score').innerHTML, 10)
 	score += 10
-	if _waiting then score += 1
+	score += 1 if _waiting
 
 	document.getElementById('score').innerHTML = score
 
@@ -511,8 +522,7 @@ UpdateScore = ->
 Keep IE happy (also shorter to type!)
 ###
 log = (msg) ->
-	if console and console.log
-		console.log msg
+	console.log msg if console and console.log
 
 ###
 Advance to the next level
@@ -523,9 +533,9 @@ NextLevel = ->
 	_waiting = false
 	_junk = []
 
-	do DrawGrid
+	DrawGrid()
 	DrawPlayer GetRandomCoord('x'), GetRandomCoord('y')
-	do InitRobots
+	InitRobots()
 
 
 ###
@@ -536,7 +546,7 @@ CheckBrowser = ->
 
 	# Opera
 	if window.opera
-		if parseFloat(do window.opera.version) < 11.60
+		if parseFloat(window.opera.version()) < 11.60
 			old = true
 	# Chrome
 	else if window.chrome
@@ -551,7 +561,7 @@ CheckBrowser = ->
 		if parseFloat(navigator.userAgent.match(/Firefox\/([\d\.]+)/)[1]) < 10
 			old = true
 	# IE
-	else if  navigator.appName == 'Microsoft Internet Explorer'
+	else if  navigator.appName is 'Microsoft Internet Explorer'
 		if parseInt(navigator.appVersion.match(/MSIE (\d+)/)[1], 10) < 9
 			old = true
 
@@ -570,29 +580,29 @@ Start the game!
 InitGame = ->
 	_numrobots = 10
 
-	do LoadOptions
+	LoadOptions()
 
 	# Why doesn't Javascript have sleep() ? :-(
 	sleep = setInterval(->
-		if window.loaded
+		if _loaded
 			clearInterval sleep
-			do InitGame2
+			InitGame2()
 	, 100)
 
 InitGame2 = ->
-	do DrawGrid
+	DrawGrid()
 	DrawPlayer GetRandomCoord('x'), GetRandomCoord('y')
-	do InitRobots
+	InitRobots()
 	window.addEventListener 'keypress', HandleKeyboard, false
 	window.addEventListener 'click', HandleMouse, false
 
-do CheckBrowser
-do InitGame
+CheckBrowser()
+InitGame()
 
 
 # The MIT License (MIT)
 #
-# Copyright © 2012-2014 Martin Tournoij
+# Copyright © 2012-2016 Martin Tournoij
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to

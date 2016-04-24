@@ -13,14 +13,14 @@ p {
 
 a, a:visited {
   display: inline-block;
-  background-color: #eeeeee;
-  color: black;
+  background-color: #eee;
+  color: #000;
   text-decoration: none;
-  border: 1px solid #666666;
+  border: 1px solid #666;
   padding: 0.2em 0.3em;
   margin-bottom: 0.2em; }
   a:hover, a:visited:hover {
-    background-color: #dddddd; }
+    background-color: #ddd; }
 
 #aboutwindow p > a {
   background-color: transparent;
@@ -42,14 +42,14 @@ input.small {
 
 #grid {
   z-index: 1;
-  border: 2px solid #666666; }
+  border: 2px solid #666; }
 
 #restart {
   position: absolute;
   left: 20px;
   top: 20px;
-  border: 1px solid #666666;
-  background-color: white;
+  border: 1px solid #666;
+  background-color: #fff;
   padding: 0.5em; }
   #restart .score {
     display: inline-block;
@@ -72,8 +72,8 @@ input.small {
   top: 40px;
   left: 110px;
   width: 626px;
-  background-color: white;
-  border: 1px solid #666666; }
+  background-color: #fff;
+  border: 1px solid #666; }
   .window p {
     padding: 0.5em 1em;
     margin: 0; }
@@ -81,7 +81,7 @@ input.small {
     margin: 0;
     padding: 0.3em;
     border-top: 1px solid #b7b7b7;
-    background-color: #aaaaaa; }
+    background-color: #aaa; }
   .window .help {
     display: block;
     margin-left: 12.5em;
@@ -96,12 +96,17 @@ input.small {
   top: 0;
   width: 100%;
   height: 100%;
-  background-color: black;
+  background-color: #000;
   opacity: 0.5; }
 
 #oldbrowser {
   padding: 0.5em;
-  border: 1px solid #666666;
-  background-color: #eeeeee;
+  border: 1px solid #666;
+  background-color: #eee;
   margin-bottom: 1em;
   width: 814px; }
+
+.clearfix {
+  clear: both; }
+
+/*# sourceMappingURL=robots.css.map */
