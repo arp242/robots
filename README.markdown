@@ -1,6 +1,4 @@
-Project status: finished (it does what it needs to do and there are no known bugs).
-
------------------------------------------
+[![This project is considered finished](https://img.shields.io/badge/Status-finished-green.svg)](https://arp242.net/status/finished)
 
 Reproduction of the 1980 “classic” robots game for BSD UNIX written by Ken
 Arnold.
